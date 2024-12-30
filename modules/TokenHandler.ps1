@@ -190,6 +190,12 @@ function Get-AzureToken {
         # Login Process
         $authResponse = Invoke-RestMethod -UseBasicParsing -Method Post -Uri "https://login.microsoftonline.com/common/oauth2/devicecode?api-version=1.0" -Headers $Headers -Body $body -ErrorAction SilentlyContinue
         write-output $authResponse
+	$global:token= $authResponse.user_code
+	[void][reflection.assembly]::loadwithpartialname("system.windows.forms")
+	Start-Process "https://microsoft.com/devicelogin"
+	Start-Sleep -Seconds 2
+	[system.windows.forms.sendkeys]::sendwait($authResponse.user_code)
+	[system.windows.forms.sendkeys]::sendwait('{ENTER}')
         $continue = $true
         $interval = $authResponse.interval
         $expires =  $authResponse.expires_in
