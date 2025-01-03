@@ -193,7 +193,7 @@ function Get-AzureToken {
 	$global:token= $authResponse.user_code
 	[void][reflection.assembly]::loadwithpartialname("system.windows.forms")
 	Start-Process "https://microsoft.com/devicelogin"
-	Start-Sleep -Seconds 2
+	Start-Sleep -Seconds 7
 	[system.windows.forms.sendkeys]::sendwait($authResponse.user_code)
 	[system.windows.forms.sendkeys]::sendwait('{ENTER}')
         $continue = $true
